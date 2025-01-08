@@ -9,7 +9,8 @@ import {
   useNavigation,
   useRouteError,
 } from '@remix-run/react';
-import { createCookieSessionStorage, json } from '@remix-run/cloudflare';
+import { TableClient } from '@azure/data-tables';
+import { json } from '@remix-run/cloudflare';
 import { ThemeProvider, themeStyles } from '~/components/theme-provider';
 import GothamBook from '~/assets/fonts/gotham-book.woff2';
 import GothamMedium from '~/assets/fonts/gotham-medium.woff2';
@@ -52,26 +53,24 @@ export const loader = async ({ request, context }) => {
   const pathnameSliced = pathname.endsWith('/') ? pathname.slice(0, -1) : url;
   const canonicalUrl = `${config.url}${pathnameSliced}`;
 
-  const { getSession, commitSession } = createCookieSessionStorage({
-    cookie: {
-      name: '__session',
-      httpOnly: true,
-      maxAge: 604_800,
-      path: '/',
-      sameSite: 'lax',
-      secrets: [context.cloudflare.env.SESSION_SECRET || ' '],
-      secure: true,
-    },
-  });
+  const tableClient = TableClient.fromConnectionString(
+    context.azure.env.AZURE_TABLE_CONNECTION_STRING,
+    'sessions'
+  );
 
-  const session = await getSession(request.headers.get('Cookie'));
-  const theme = session.get('theme') || 'dark';
+  const sessionId = request.headers.get('Cookie')?.split('=')[1];
+  let theme = 'dark';
+
+  if (sessionId) {
+    const sessionEntity = await tableClient.getEntity('session', sessionId);
+    theme = sessionEntity.theme || 'dark';
+  }
 
   return json(
     { canonicalUrl, theme },
     {
       headers: {
-        'Set-Cookie': await commitSession(session),
+        'Set-Cookie': `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`,
       },
     }
   );

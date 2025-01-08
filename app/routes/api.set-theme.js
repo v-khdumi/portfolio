@@ -1,29 +1,25 @@
-import { json, createCookieSessionStorage } from '@remix-run/cloudflare';
+import { json } from '@remix-run/cloudflare';
+import { TableClient } from '@azure/data-tables';
 
 export async function action({ request, context }) {
   const formData = await request.formData();
   const theme = formData.get('theme');
 
-  const { getSession, commitSession } = createCookieSessionStorage({
-    cookie: {
-      name: '__session',
-      httpOnly: true,
-      maxAge: 604_800,
-      path: '/',
-      sameSite: 'lax',
-      secrets: [context.cloudflare.env.SESSION_SECRET || ' '],
-      secure: true,
-    },
-  });
+  const tableClient = TableClient.fromConnectionString(
+    context.azure.env.AZURE_TABLE_CONNECTION_STRING,
+    'sessions'
+  );
 
-  const session = await getSession(request.headers.get('Cookie'));
-  session.set('theme', theme);
+  const sessionId = request.headers.get('Cookie')?.split('=')[1];
+  const sessionEntity = await tableClient.getEntity('session', sessionId);
+  sessionEntity.theme = theme;
+  await tableClient.updateEntity(sessionEntity);
 
   return json(
     { status: 'success' },
     {
       headers: {
-        'Set-Cookie': await commitSession(session),
+        'Set-Cookie': `session=${sessionId}; Path=/; HttpOnly; SameSite=Lax; Max-Age=604800`,
       },
     }
   );
