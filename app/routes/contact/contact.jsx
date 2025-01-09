@@ -15,7 +15,7 @@ import { cssProps, msToNum, numToMs } from '~/utils/style';
 import { baseMeta } from '~/utils/meta';
 import { Form, useActionData, useNavigation } from '@remix-run/react';
 import { json } from '@remix-run/cloudflare';
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import { EmailClient, EmailMessage } from '@azure/communication-email';
 import styles from './contact.module.css';
 
 export const meta = () => {
@@ -31,13 +31,7 @@ const MAX_MESSAGE_LENGTH = 4096;
 const EMAIL_PATTERN = /(.+)@(.+){2,}\.(.+){2,}/;
 
 export async function action({ context, request }) {
-  const ses = new SESClient({
-    region: 'us-east-1',
-    credentials: {
-      accessKeyId: context.cloudflare.env.AWS_ACCESS_KEY_ID,
-      secretAccessKey: context.cloudflare.env.AWS_SECRET_ACCESS_KEY,
-    },
-  });
+  const emailClient = new EmailClient(context.azure.env.AZURE_COMMUNICATION_CONNECTION_STRING);
 
   const formData = await request.formData();
   const isBot = String(formData.get('name'));
@@ -69,26 +63,19 @@ export async function action({ context, request }) {
     return json({ errors });
   }
 
-  // Send email via Amazon SES
-  await ses.send(
-    new SendEmailCommand({
-      Destination: {
-        ToAddresses: [context.cloudflare.env.EMAIL],
-      },
-      Message: {
-        Body: {
-          Text: {
-            Data: `From: ${email}\n\n${message}`,
-          },
-        },
-        Subject: {
-          Data: `Portfolio message from ${email}`,
-        },
-      },
-      Source: `Portfolio <${context.cloudflare.env.FROM_EMAIL}>`,
-      ReplyToAddresses: [email],
-    })
-  );
+  // Send email via Azure Communication Services
+  const emailMessage = {
+    sender: context.azure.env.FROM_EMAIL,
+    content: {
+      subject: `Portfolio message from ${email}`,
+      plainText: `From: ${email}\n\n${message}`,
+    },
+    recipients: {
+      to: [{ email: context.azure.env.EMAIL }],
+    },
+  };
+
+  await emailClient.send(emailMessage);
 
   return json({ success: true });
 }
