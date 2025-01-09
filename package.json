@@ -17,10 +17,7 @@
     "deploy:storybook": "wrangler pages deploy ./storybook-static --project-name portfolio-storybook --branch main"
   },
   "dependencies": {
-    "@aws-sdk/client-ses": "^3.515.0",
     "@mdx-js/react": "^3.0.1",
-    "@remix-run/cloudflare": "^2.7.1",
-    "@remix-run/cloudflare-pages": "^2.7.1",
     "@remix-run/react": "^2.7.1",
     "framer-motion": "11.0.5",
     "isbot": "^4.1.0",
@@ -30,7 +27,8 @@
     "rehype-img-size": "^1.0.1",
     "rehype-slug": "^6.0.0",
     "three": "^0.161.0",
-    "three-stdlib": "^2.29.4"
+    "three-stdlib": "^2.29.4",
+    "@azure/communication-email": "^1.0.0"
   },
   "devDependencies": {
     "@csstools/postcss-global-data": "^2.1.1",
