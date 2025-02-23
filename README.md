@@ -35,6 +35,20 @@ I've set up the site using Cloudflare for hosting. Deploy the site to Cloudflare
 npm run deploy
 ```
 
+### Deploy to Azure Web App
+
+To deploy the site to Azure Web App, follow these steps:
+
+1. Make sure you have the Azure CLI installed and logged in.
+2. Update the `azure-pipelines.yml` file with your Azure subscription, app name, resource group, and app service plan.
+3. Run the following command to deploy the site:
+
+```bash
+npm run deploy:azure
+```
+
+[![Deploy to Azure](https://aka.ms/deploytoazurebutton)](https://portal.azure.com/#create/Microsoft.WebSite)
+
 ## Permissions
 
 I'm cool with anyone using the code or parts of the code for their own site, it is open source so people can learn from it and adapt it. However, I would encourage you to modify the theme and components it to make it your own. If you are using the site's design largely unmodified, I'd appreciate being credited as the designer of the website.
